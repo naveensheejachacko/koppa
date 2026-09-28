@@ -9,6 +9,7 @@ import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
 import { env } from "./config/env.js";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler.js";
+import { callableExport } from "./utils/callable-export.js";
 import { authRouter } from "./modules/auth/auth.router.js";
 import { usersRouter } from "./modules/users/users.router.js";
 import { onboardingRouter } from "./modules/onboarding/onboarding.router.js";
@@ -20,21 +21,32 @@ import { adminRouter } from "./modules/admin/admin.router.js";
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const openapiPath = path.join(dirname, "openapi.yaml");
 
+const helmetMiddleware = callableExport(helmet);
+const corsMiddleware = callableExport(cors);
+const rateLimitMiddleware = callableExport<[
+  {
+    windowMs: number;
+    limit: number;
+    standardHeaders: "draft-7";
+    legacyHeaders: boolean;
+  },
+]>(rateLimit);
+
 export function createApp() {
   const app = express();
   const config = env();
 
   app.set("trust proxy", 1);
-  app.use(helmet());
+  app.use(helmetMiddleware());
   app.use(
-    cors({
+    corsMiddleware({
       origin: config.CORS_ORIGIN.split(",").map((s) => s.trim()),
       credentials: true,
     }),
   );
   app.use(express.json({ limit: "1mb" }));
   app.use(
-    rateLimit({
+    rateLimitMiddleware({
       windowMs: 60_000,
       limit: 120,
       standardHeaders: "draft-7",
