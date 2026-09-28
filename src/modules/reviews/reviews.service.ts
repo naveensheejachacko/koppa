@@ -1,4 +1,4 @@
-import { VerificationStatus } from "@prisma/client";
+import { VerificationStatus } from "../../domain/enums.js";
 import { prisma } from "../../database/prisma.js";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "../../utils/errors.js";
 import { paginationMeta, skipTake } from "../../utils/pagination.js";

@@ -1,4 +1,5 @@
-import { PriceRange, type Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
+import { PriceRange } from "../../domain/enums.js";
 import { prisma } from "../../database/prisma.js";
 import { ValidationError } from "../../utils/errors.js";
 

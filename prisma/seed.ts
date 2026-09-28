@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
-import { PrismaClient, QuestionType, XpAction } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
+import { QuestionType, XpAction } from "../src/domain/enums.js";
 
 const prisma = new PrismaClient();
 

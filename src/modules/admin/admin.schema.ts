@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { CafeStatus, MediaType, PriceRange, SuggestionStatus, XpAction } from "@prisma/client";
 
 export const categoryBodySchema = z.object({
   name: z.string().min(1).max(80),
@@ -16,10 +15,10 @@ export const createCafeSchema = z.object({
   longitude: z.number(),
   address: z.string().min(1),
   place: z.string().min(1),
-  price_range: z.nativeEnum(PriceRange).optional(),
+  price_range: z.enum(["BUDGET", "MODERATE", "PREMIUM"]).optional(),
   features: z.array(z.string()).optional(),
   category_ids: z.array(z.string().uuid()).optional(),
-  status: z.nativeEnum(CafeStatus).optional(),
+  status: z.enum(["ACTIVE", "INACTIVE"]).optional(),
 });
 
 export const patchCafeSchema = createCafeSchema.partial().extend({
@@ -27,7 +26,7 @@ export const patchCafeSchema = createCafeSchema.partial().extend({
 });
 
 export const cafeMediaSchema = z.object({
-  media_type: z.nativeEnum(MediaType),
+  media_type: z.enum(["IMAGE", "VIDEO"]),
   cloudinary_url: z.string().url(),
   public_id: z.string().min(1),
   thumbnail_url: z.string().url().optional(),
@@ -39,11 +38,11 @@ export const suggestionReviewSchema = z.object({
 });
 
 export const xpRulePatchSchema = z.object({
-  action: z.nativeEnum(XpAction),
+  action: z.enum(["NEW_CAFE_VISIT", "REVISIT", "CAFE_SUGGESTION"]),
   xp: z.number().int().min(0),
   is_active: z.boolean().optional(),
 });
 
 export const suggestionListQuerySchema = z.object({
-  status: z.nativeEnum(SuggestionStatus).optional(),
+  status: z.enum(["PENDING", "APPROVED", "REJECTED"]).optional(),
 });

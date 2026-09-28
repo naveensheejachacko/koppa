@@ -1,4 +1,5 @@
-import { PriceRange, Prisma, type User } from "@prisma/client";
+import { Prisma, type User } from "@prisma/client";
+import { PriceRange } from "../../domain/enums.js";
 import { prisma } from "../../database/prisma.js";
 import { NotFoundError } from "../../utils/errors.js";
 import { paginationMeta, skipTake } from "../../utils/pagination.js";

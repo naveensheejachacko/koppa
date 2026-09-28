@@ -1,4 +1,5 @@
 import path from "node:path";
+import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import cors from "cors";
 import express from "express";
@@ -45,11 +46,13 @@ export function createApp() {
     res.status(200).json({ status: "ok" });
   });
 
-  const swaggerDocument = YAML.load(openapiPath);
-  app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-  app.get("/openapi.yaml", (_req, res) => {
-    res.sendFile(openapiPath);
-  });
+  if (existsSync(openapiPath)) {
+    const swaggerDocument = YAML.load(openapiPath);
+    app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+    app.get("/openapi.yaml", (_req, res) => {
+      res.sendFile(openapiPath);
+    });
+  }
 
   const api = express.Router();
   api.use("/auth", authRouter);

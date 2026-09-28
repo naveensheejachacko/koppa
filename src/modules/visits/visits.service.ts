@@ -1,4 +1,5 @@
-import { MediaType, Prisma, VerificationStatus, XpAction } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import { MediaType, VerificationStatus, XpAction, isPrismaUniqueViolation } from "../../domain/enums.js";
 import { prisma } from "../../database/prisma.js";
 import { ConflictError, NotFoundError } from "../../utils/errors.js";
 import { utcVisitDay } from "../../utils/week.js";
@@ -94,7 +95,7 @@ export async function createVisit(userId: string, cafeId: string, input: CreateV
   const action = priorVerified ? XpAction.REVISIT : XpAction.NEW_CAFE_VISIT;
   const xp = await getXpAmount(action);
 
-  const result = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const visit = await tx.visit.create({
       data: {
         userId,
@@ -134,7 +135,7 @@ export async function createVisit(userId: string, cafeId: string, input: CreateV
         },
       });
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      if (isPrismaUniqueViolation(error)) {
         throw new ConflictError("XP already awarded for this visit");
       }
       throw error;

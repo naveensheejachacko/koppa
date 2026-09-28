@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { PriceRange } from "@prisma/client";
 
 export const updateMeSchema = z.object({
   name: z.string().min(1).max(80).optional(),
@@ -15,6 +14,6 @@ export const updateMeSchema = z.object({
 export const updatePreferencesSchema = z.object({
   category_slugs: z.array(z.string().min(1)).optional(),
   features: z.array(z.string().min(1)).optional(),
-  price_range: z.nativeEnum(PriceRange).nullable().optional(),
+  price_range: z.enum(["BUDGET", "MODERATE", "PREMIUM"]).nullable().optional(),
   max_distance_km: z.number().positive().max(100).nullable().optional(),
 });

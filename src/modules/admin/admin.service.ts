@@ -1,10 +1,10 @@
 import { prisma } from "../../database/prisma.js";
 import { ConflictError, NotFoundError } from "../../utils/errors.js";
 import { paginationMeta, skipTake } from "../../utils/pagination.js";
-import { CafeStatus, MediaType, PriceRange, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import { CafeStatus, MediaType, PriceRange, XpAction } from "../../domain/enums.js";
 import { serializeCafe } from "../cafes/cafes.service.js";
 import { listXpRules, updateXpRule } from "../xp/xp.service.js";
-import { XpAction } from "@prisma/client";
 
 const cafeInclude = {
   categories: { include: { category: true } },

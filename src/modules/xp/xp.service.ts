@@ -1,4 +1,4 @@
-import { XpAction } from "@prisma/client";
+import { XpAction } from "../../domain/enums.js";
 import { prisma } from "../../database/prisma.js";
 import { AppError } from "../../utils/errors.js";
 

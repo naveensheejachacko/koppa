@@ -1,4 +1,5 @@
-import { CafeStatus, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import { CafeStatus } from "../../domain/enums.js";
 import { prisma } from "../../database/prisma.js";
 import { NotFoundError, ValidationError } from "../../utils/errors.js";
 import { paginationMeta, skipTake } from "../../utils/pagination.js";

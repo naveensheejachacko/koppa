@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { Role } from "@prisma/client";
+import { Role } from "../../domain/enums.js";
 import { env } from "../../config/env.js";
 import { prisma } from "../../database/prisma.js";
 import { ConflictError, UnauthorizedError, ValidationError } from "../../utils/errors.js";

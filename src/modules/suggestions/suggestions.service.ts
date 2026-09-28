@@ -1,4 +1,4 @@
-import { SuggestionStatus, XpAction } from "@prisma/client";
+import { SuggestionStatus, XpAction } from "../../domain/enums.js";
 import { prisma } from "../../database/prisma.js";
 import { ConflictError, NotFoundError, ValidationError } from "../../utils/errors.js";
 import { paginationMeta, skipTake } from "../../utils/pagination.js";

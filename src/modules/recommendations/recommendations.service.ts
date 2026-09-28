@@ -2,7 +2,7 @@ import { prisma } from "../../database/prisma.js";
 import { paginationMeta } from "../../utils/pagination.js";
 import { haversineKm } from "../../utils/geo.js";
 import { serializeCafe } from "../cafes/cafes.service.js";
-import { CafeStatus } from "@prisma/client";
+import { CafeStatus } from "../../domain/enums.js";
 
 const publicInclude = {
   categories: { include: { category: true } },
