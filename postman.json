@@ -1,0 +1,869 @@
+{
+  "info": {
+    "name": "Koppa API v1",
+    "description": "Phase 1 REST collection.\n\n1. Set `baseUrl` (default http://localhost:3000).\n2. Run Auth → Register or Login. Tests save `accessToken` and `refreshToken`.\n3. Admin seed user: `admin@koppa.local` / `ChangeMeAdmin1!` (if seed ran).\n4. After Admin → Create cafe, copy `data.id` into `cafeId`.\n\nBearer is collection-level. Public folders override to No Auth.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "accessToken", "value": "" },
+    { "key": "refreshToken", "value": "" },
+    { "key": "cafeId", "value": "" },
+    { "key": "categoryId", "value": "" },
+    { "key": "reviewId", "value": "" },
+    { "key": "suggestionId", "value": "" },
+    { "key": "questionId", "value": "" },
+    { "key": "optionId", "value": "" },
+    { "key": "lat", "value": "11.2588" },
+    { "key": "lng", "value": "75.7804" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "auth": { "type": "noauth" },
+      "item": [
+        {
+          "name": "GET health",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "auth": { "type": "noauth" },
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('accessToken', json.tokens.access_token);",
+                  "  pm.collectionVariables.set('refreshToken', json.tokens.refresh_token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"naveen@example.com\",\n  \"password\": \"password123\",\n  \"name\": \"Naveen\",\n  \"username\": \"naveen\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/register"
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('accessToken', json.tokens.access_token);",
+                  "  pm.collectionVariables.set('refreshToken', json.tokens.refresh_token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"naveen@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login"
+          }
+        },
+        {
+          "name": "Login (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('accessToken', json.tokens.access_token);",
+                  "  pm.collectionVariables.set('refreshToken', json.tokens.refresh_token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@koppa.local\",\n  \"password\": \"ChangeMeAdmin1!\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login"
+          }
+        },
+        {
+          "name": "Refresh",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('accessToken', json.tokens.access_token);",
+                  "  pm.collectionVariables.set('refreshToken', json.tokens.refresh_token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/refresh"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/logout"
+          }
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/auth/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public discovery",
+      "auth": { "type": "noauth" },
+      "item": [
+        {
+          "name": "List categories",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/categories"
+          }
+        },
+        {
+          "name": "Cafes in category",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/categories/:id/cafes?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "categories", ":id", "cafes"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ],
+              "variable": [{ "key": "id", "value": "{{categoryId}}" }]
+            }
+          }
+        },
+        {
+          "name": "List cafes",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cafes?page=1&limit=20&q=&category=&place=&feature=&lat={{lat}}&lng={{lng}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "cafes"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "q", "value": "", "disabled": true },
+                { "key": "category", "value": "work", "disabled": true },
+                { "key": "place", "value": "Kozhikode", "disabled": true },
+                { "key": "feature", "value": "wifi", "disabled": true },
+                { "key": "lat", "value": "{{lat}}" },
+                { "key": "lng", "value": "{{lng}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Nearby cafes",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cafes/nearby?latitude={{lat}}&longitude={{lng}}&radius_km=5&page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "cafes", "nearby"],
+              "query": [
+                { "key": "latitude", "value": "{{lat}}" },
+                { "key": "longitude", "value": "{{lng}}" },
+                { "key": "radius_km", "value": "5" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get cafe",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cafes/:id?lat={{lat}}&lng={{lng}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "cafes", ":id"],
+              "query": [
+                { "key": "lat", "value": "{{lat}}" },
+                { "key": "lng", "value": "{{lng}}" }
+              ],
+              "variable": [{ "key": "id", "value": "{{cafeId}}" }]
+            }
+          }
+        },
+        {
+          "name": "List cafe reviews",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cafes/:id/reviews?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "cafes", ":id", "reviews"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ],
+              "variable": [{ "key": "id", "value": "{{cafeId}}" }]
+            }
+          }
+        },
+        {
+          "name": "Weekly leaderboard",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/leaderboard/weekly?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "leaderboard", "weekly"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "item": [
+        {
+          "name": "Profile",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/users/me"
+          }
+        },
+        {
+          "name": "Patch profile",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Naveen K\",\n  \"username\": \"naveen\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/users/me"
+          }
+        },
+        {
+          "name": "XP summary",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/users/me/xp"
+          }
+        },
+        {
+          "name": "XP history",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/me/xp-history?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "me", "xp-history"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "My visits",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/me/visits?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "me", "visits"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "My reviews",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/me/reviews?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "me", "reviews"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get preferences",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/users/me/preferences"
+          }
+        },
+        {
+          "name": "Patch preferences",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category_slugs\": [\"work\", \"quiet\"],\n  \"features\": [\"wifi\", \"quiet\"],\n  \"price_range\": \"MODERATE\",\n  \"max_distance_km\": 5\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/users/me/preferences"
+          }
+        },
+        {
+          "name": "My weekly rank",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/leaderboard/weekly/me"
+          }
+        },
+        {
+          "name": "Recommended cafes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cafes/recommended?page=1&limit=20&lat={{lat}}&lng={{lng}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "cafes", "recommended"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "lat", "value": "{{lat}}" },
+                { "key": "lng", "value": "{{lng}}" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Onboarding",
+      "item": [
+        {
+          "name": "Questions",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/onboarding/questions"
+          }
+        },
+        {
+          "name": "Save answers",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answers\": [\n    {\n      \"question_id\": \"{{questionId}}\",\n      \"option_ids\": [\"{{optionId}}\"]\n    },\n    {\n      \"question_id\": \"{{questionId}}\",\n      \"value\": \"5\"\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/onboarding/answers"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Visits & reviews",
+      "item": [
+        {
+          "name": "Create visit (verified path)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": 11.2588,\n  \"longitude\": 75.7804,\n  \"accuracy\": 18,\n  \"media\": {\n    \"cloudinary_url\": \"https://res.cloudinary.com/demo/image/upload/sample.jpg\",\n    \"public_id\": \"koppa/sample\",\n    \"media_type\": \"IMAGE\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cafes/:id/visits",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "cafes", ":id", "visits"],
+              "variable": [{ "key": "id", "value": "{{cafeId}}" }]
+            }
+          }
+        },
+        {
+          "name": "Create visit (outside radius)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": 11.35,\n  \"longitude\": 75.85,\n  \"accuracy\": 10\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cafes/:id/visits",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "cafes", ":id", "visits"],
+              "variable": [{ "key": "id", "value": "{{cafeId}}" }]
+            }
+          }
+        },
+        {
+          "name": "Create review",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"body\": \"Great coffee and quiet seats for work.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cafes/:id/reviews",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "cafes", ":id", "reviews"],
+              "variable": [{ "key": "id", "value": "{{cafeId}}" }]
+            }
+          }
+        },
+        {
+          "name": "Patch review",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 4,\n  \"body\": \"Still good. A bit crowded after 6pm.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reviews/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "reviews", ":id"],
+              "variable": [{ "key": "id", "value": "{{reviewId}}" }]
+            }
+          }
+        },
+        {
+          "name": "Delete review",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reviews/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "reviews", ":id"],
+              "variable": [{ "key": "id", "value": "{{reviewId}}" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cafe suggestions",
+      "item": [
+        {
+          "name": "Suggest cafe",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Beachside Espresso\",\n  \"address\": \"SM Street\",\n  \"place\": \"Kozhikode\",\n  \"latitude\": 11.2588,\n  \"longitude\": 75.7804,\n  \"description\": \"Small specialty spot\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/cafe-suggestions"
+          }
+        },
+        {
+          "name": "My suggestions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cafe-suggestions/my?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "cafe-suggestions", "my"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Dashboard",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/admin/dashboard"
+          }
+        },
+        {
+          "name": "List users",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/users?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "users"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List visits",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/visits?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "visits"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List admin categories",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/admin/categories"
+          }
+        },
+        {
+          "name": "Create category",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cowork\",\n  \"slug\": \"cowork\",\n  \"sort_order\": 20\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/admin/categories"
+          }
+        },
+        {
+          "name": "Patch category",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Coworking\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/categories/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "categories", ":id"],
+              "variable": [{ "key": "id", "value": "{{categoryId}}" }]
+            }
+          }
+        },
+        {
+          "name": "Delete category",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/categories/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "categories", ":id"],
+              "variable": [{ "key": "id", "value": "{{categoryId}}" }]
+            }
+          }
+        },
+        {
+          "name": "List admin cafes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/cafes?page=1&limit=20&include_deleted=false",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "cafes"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "include_deleted", "value": "false" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create cafe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.id) {",
+                  "    pm.collectionVariables.set('cafeId', json.data.id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cafe ABC\",\n  \"description\": \"Quiet work cafe\",\n  \"latitude\": 11.2588,\n  \"longitude\": 75.7804,\n  \"address\": \"SM Street\",\n  \"place\": \"Kozhikode\",\n  \"price_range\": \"MODERATE\",\n  \"features\": [\"wifi\", \"quiet\", \"power_outlets\"],\n  \"category_ids\": []\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/admin/cafes"
+          }
+        },
+        {
+          "name": "Get admin cafe",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/cafes/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "cafes", ":id"],
+              "variable": [{ "key": "id", "value": "{{cafeId}}" }]
+            }
+          }
+        },
+        {
+          "name": "Patch cafe",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_active\": true,\n  \"status\": \"ACTIVE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/cafes/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "cafes", ":id"],
+              "variable": [{ "key": "id", "value": "{{cafeId}}" }]
+            }
+          }
+        },
+        {
+          "name": "Add cafe media",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"media_type\": \"IMAGE\",\n  \"cloudinary_url\": \"https://res.cloudinary.com/demo/image/upload/sample.jpg\",\n  \"public_id\": \"koppa/cafes/sample\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/cafes/:id/media",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "cafes", ":id", "media"],
+              "variable": [{ "key": "id", "value": "{{cafeId}}" }]
+            }
+          }
+        },
+        {
+          "name": "Soft delete cafe",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/cafes/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "cafes", ":id"],
+              "variable": [{ "key": "id", "value": "{{cafeId}}" }]
+            }
+          }
+        },
+        {
+          "name": "Restore cafe",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/cafes/:id/restore",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "cafes", ":id", "restore"],
+              "variable": [{ "key": "id", "value": "{{cafeId}}" }]
+            }
+          }
+        },
+        {
+          "name": "List reviews (admin)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/reviews?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "reviews"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Hide review",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/reviews/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "reviews", ":id"],
+              "variable": [{ "key": "id", "value": "{{reviewId}}" }]
+            }
+          }
+        },
+        {
+          "name": "List suggestions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/cafe-suggestions?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "cafe-suggestions"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "status", "value": "PENDING", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Approve suggestion",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"APPROVED\",\n  \"admin_note\": \"Looks real\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/cafe-suggestions/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "cafe-suggestions", ":id"],
+              "variable": [{ "key": "id", "value": "{{suggestionId}}" }]
+            }
+          }
+        },
+        {
+          "name": "Reject suggestion",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"REJECTED\",\n  \"admin_note\": \"Duplicate listing\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/cafe-suggestions/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "cafe-suggestions", ":id"],
+              "variable": [{ "key": "id", "value": "{{suggestionId}}" }]
+            }
+          }
+        },
+        {
+          "name": "List XP rules",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/admin/xp-rules"
+          }
+        },
+        {
+          "name": "Patch XP rule",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"NEW_CAFE_VISIT\",\n  \"xp\": 20,\n  \"is_active\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/admin/xp-rules"
+          }
+        }
+      ]
+    }
+  ]
+}

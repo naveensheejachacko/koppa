@@ -1,0 +1,314 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum CafeSource {
+  ADMIN
+  SUGGESTION
+}
+
+enum OwnerType {
+  PLATFORM
+  VENDOR
+}
+
+enum CafeStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum SuggestionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+enum XpAction {
+  NEW_CAFE_VISIT
+  REVISIT
+  CAFE_SUGGESTION
+}
+
+enum PriceRange {
+  BUDGET
+  MODERATE
+  PREMIUM
+}
+
+enum QuestionType {
+  SINGLE
+  MULTI
+  NUMBER
+}
+
+model User {
+  id              String   @id @default(uuid())
+  email           String   @unique
+  passwordHash    String
+  name            String
+  username        String   @unique
+  profileImageUrl String?
+  role            Role     @default(USER)
+  totalXp         Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  answers        UserAnswer[]
+  preferences    UserPreference?
+  reviews        Review[]
+  suggestions    CafeSuggestion[]
+  visits         Visit[]
+  visitMedia     VisitMedia[]
+  xpTransactions XpTransaction[]
+  refreshTokens  RefreshToken[]
+  cafeMedia      CafeMedia[]
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  name      String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  cafes     CafeCategory[]
+}
+
+model Cafe {
+  id          String     @id @default(uuid())
+  name        String
+  description String     @default("")
+  latitude    Float
+  longitude   Float
+  address     String
+  place       String
+  status      CafeStatus @default(ACTIVE)
+  source      CafeSource @default(ADMIN)
+  ownerType   OwnerType  @default(PLATFORM)
+  priceRange  PriceRange @default(MODERATE)
+  features    String[]
+  isActive    Boolean    @default(true)
+  deletedAt   DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  categories CafeCategory[]
+  media      CafeMedia[]
+  reviews    Review[]
+  visits     Visit[]
+  suggestion CafeSuggestion?
+
+  @@index([deletedAt, isActive, status])
+  @@index([place])
+}
+
+model CafeCategory {
+  cafeId     String
+  categoryId String
+  cafe       Cafe     @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([cafeId, categoryId])
+  @@index([categoryId])
+}
+
+model CafeMedia {
+  id            String    @id @default(uuid())
+  cafeId        String
+  cafe          Cafe      @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  uploadedById  String?
+  uploadedBy    User?     @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  mediaType     MediaType
+  cloudinaryUrl String
+  publicId      String
+  thumbnailUrl  String?
+  createdAt     DateTime  @default(now())
+
+  @@index([cafeId])
+}
+
+model OnboardingQuestion {
+  id        String       @id @default(uuid())
+  key       String       @unique
+  prompt    String
+  type      QuestionType
+  sortOrder Int          @default(0)
+  isActive  Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  options   OnboardingOption[]
+  answers   UserAnswer[]
+}
+
+model OnboardingOption {
+  id         String             @id @default(uuid())
+  questionId String
+  question   OnboardingQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  label      String
+  value      String
+  sortOrder  Int                @default(0)
+  answers    UserAnswer[]
+
+  @@index([questionId])
+}
+
+model UserAnswer {
+  id         String             @id @default(uuid())
+  userId     String
+  questionId String
+  optionId   String?
+  value      String?
+  createdAt  DateTime           @default(now())
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question   OnboardingQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  option     OnboardingOption?  @relation(fields: [optionId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+}
+
+model UserPreference {
+  userId        String      @id
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categorySlugs String[]
+  features      String[]
+  priceRange    PriceRange?
+  maxDistanceKm Float?
+  updatedAt     DateTime    @updatedAt
+}
+
+model CafeSuggestion {
+  id          String           @id @default(uuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cafeId      String?          @unique
+  cafe        Cafe?            @relation(fields: [cafeId], references: [id], onDelete: SetNull)
+  name        String
+  address     String
+  place       String
+  latitude    Float?
+  longitude   Float?
+  description String           @default("")
+  imageUrl    String?
+  status      SuggestionStatus @default(PENDING)
+  adminNote   String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Review {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cafeId    String
+  cafe      Cafe      @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  rating    Int
+  body      String
+  isHidden  Boolean   @default(false)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([userId, cafeId])
+  @@index([cafeId])
+}
+
+model Visit {
+  id                 String             @id @default(uuid())
+  userId             String
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cafeId             String
+  cafe               Cafe               @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  latitude           Float
+  longitude          Float
+  gpsAccuracy        Float?
+  distanceFromCafe   Float
+  verificationStatus VerificationStatus
+  verifiedAt         DateTime?
+  rejectionReason    String?
+  visitDay           DateTime           @db.Date
+  createdAt          DateTime           @default(now())
+  media              VisitMedia[]
+  xpTransactions     XpTransaction[]
+
+  @@index([userId, createdAt])
+  @@index([cafeId])
+  @@index([userId, cafeId, visitDay])
+}
+
+model VisitMedia {
+  id            String    @id @default(uuid())
+  visitId       String
+  visit         Visit     @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cafeId        String
+  mediaType     MediaType @default(IMAGE)
+  cloudinaryUrl String
+  publicId      String
+  thumbnailUrl  String?
+  createdAt     DateTime  @default(now())
+
+  @@index([visitId])
+  @@index([cafeId])
+}
+
+model XpRule {
+  id        String   @id @default(uuid())
+  action    XpAction @unique
+  xp        Int
+  isActive  Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+}
+
+model XpTransaction {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action        XpAction
+  xp            Int
+  referenceType String
+  referenceId   String
+  visitId       String?
+  visit         Visit?   @relation(fields: [visitId], references: [id], onDelete: SetNull)
+  createdAt     DateTime @default(now())
+
+  @@unique([userId, action, referenceType, referenceId])
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}

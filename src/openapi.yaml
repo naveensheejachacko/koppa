@@ -1,0 +1,86 @@
+openapi: 3.0.3
+info:
+  title: Koppa Phase 1 API
+  version: 0.1.0
+  description: Public-first cafe discovery, verified visits, XP, and weekly leaderboard.
+servers:
+  - url: /api/v1
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, name, username]
+              properties:
+                email: { type: string }
+                password: { type: string }
+                name: { type: string }
+                username: { type: string }
+      responses:
+        "201": { description: Created }
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      responses:
+        "200": { description: OK }
+  /cafes:
+    get:
+      tags: [Cafes]
+      summary: Public cafe list
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: category
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer }
+      responses:
+        "200": { description: OK }
+  /cafes/nearby:
+    get:
+      tags: [Cafes]
+      summary: Nearby cafes
+      responses:
+        "200": { description: OK }
+  /cafes/recommended:
+    get:
+      tags: [Cafes]
+      summary: Personalized recommendations
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+  /cafes/{id}/visits:
+    post:
+      tags: [Visits]
+      summary: Record visit (server verifies location and awards XP)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "201": { description: Verified }
+        "200": { description: Rejected }
+  /leaderboard/weekly:
+    get:
+      tags: [Leaderboard]
+      summary: Public weekly leaderboard
+      responses:
+        "200": { description: OK }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

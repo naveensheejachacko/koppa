@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: koppa
+      POSTGRES_PASSWORD: koppa
+      POSTGRES_DB: koppa
+    ports:
+      - "5435:5432"
+    volumes:
+      - koppa_pg:/var/lib/postgresql/data
+
+volumes:
+  koppa_pg:
