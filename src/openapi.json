@@ -3,9 +3,22 @@
   "info": {
     "title": "Koppa Phase 1 API",
     "version": "0.1.0",
-    "description": "Public-first cafe discovery, verified visits, XP, and weekly leaderboard."
+    "description": "Public-first cafe discovery, verified visits, XP, weekly leaderboard, and admin. Authorize with a user or admin JWT. Admin routes require role ADMIN."
   },
   "servers": [{ "url": "/api/v1" }],
+  "tags": [
+    { "name": "Health", "description": "Liveness (not under /api/v1)" },
+    { "name": "Auth" },
+    { "name": "Users" },
+    { "name": "Onboarding" },
+    { "name": "Categories" },
+    { "name": "Cafes" },
+    { "name": "Reviews" },
+    { "name": "Visits" },
+    { "name": "Suggestions" },
+    { "name": "Leaderboard" },
+    { "name": "Admin" }
+  ],
   "paths": {
     "/auth/register": {
       "post": {
@@ -20,7 +33,7 @@
                 "required": ["email", "password", "name", "username"],
                 "properties": {
                   "email": { "type": "string" },
-                  "password": { "type": "string" },
+                  "password": { "type": "string", "minLength": 8 },
                   "name": { "type": "string" },
                   "username": { "type": "string" }
                 }
@@ -28,13 +41,234 @@
             }
           }
         },
-        "responses": { "201": { "description": "Created" } }
+        "responses": { "201": { "description": "Created" }, "409": { "description": "Email or username taken" } }
       }
     },
     "/auth/login": {
       "post": {
         "tags": ["Auth"],
         "summary": "Login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "OK" }, "401": { "description": "Invalid credentials" } }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Refresh tokens",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["refresh_token"],
+                "properties": { "refresh_token": { "type": "string" } }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Logout (revoke refresh token)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["refresh_token"],
+                "properties": { "refresh_token": { "type": "string" } }
+              }
+            }
+          }
+        },
+        "responses": { "204": { "description": "No content" } }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Current auth user",
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "OK" }, "401": { "description": "Unauthorized" } }
+      }
+    },
+    "/users/me": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Profile + XP stats",
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "OK" } }
+      },
+      "patch": {
+        "tags": ["Users"],
+        "summary": "Update profile",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "username": { "type": "string" },
+                  "profile_image_url": { "type": "string", "nullable": true }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Updated" } }
+      }
+    },
+    "/users/me/xp": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "XP summary",
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/users/me/xp-history": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "XP transaction history",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/page" },
+          { "$ref": "#/components/parameters/limit" }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/users/me/visits": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "My visits",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/page" },
+          { "$ref": "#/components/parameters/limit" }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/users/me/reviews": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "My reviews",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/page" },
+          { "$ref": "#/components/parameters/limit" }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/users/me/preferences": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get preferences",
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "OK" } }
+      },
+      "patch": {
+        "tags": ["Users"],
+        "summary": "Update preferences",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "category_slugs": { "type": "array", "items": { "type": "string" } },
+                  "features": { "type": "array", "items": { "type": "string" } },
+                  "price_range": { "type": "string", "enum": ["BUDGET", "MODERATE", "PREMIUM"], "nullable": true },
+                  "max_distance_km": { "type": "number", "nullable": true }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Updated" } }
+      }
+    },
+    "/onboarding/questions": {
+      "get": {
+        "tags": ["Onboarding"],
+        "summary": "Configurable onboarding questions",
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/onboarding/answers": {
+      "post": {
+        "tags": ["Onboarding"],
+        "summary": "Save onboarding answers (syncs preferences)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["answers"],
+                "properties": {
+                  "answers": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["question_id"],
+                      "properties": {
+                        "question_id": { "type": "string", "format": "uuid" },
+                        "option_ids": { "type": "array", "items": { "type": "string", "format": "uuid" } },
+                        "value": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Saved" } }
+      }
+    },
+    "/categories": {
+      "get": {
+        "tags": ["Categories"],
+        "summary": "List categories (public)",
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/categories/{id}/cafes": {
+      "get": {
+        "tags": ["Categories"],
+        "summary": "Cafes in a category",
+        "parameters": [
+          { "$ref": "#/components/parameters/id" },
+          { "$ref": "#/components/parameters/page" },
+          { "$ref": "#/components/parameters/limit" }
+        ],
         "responses": { "200": { "description": "OK" } }
       }
     },
@@ -43,9 +277,14 @@
         "tags": ["Cafes"],
         "summary": "Public cafe list",
         "parameters": [
+          { "$ref": "#/components/parameters/page" },
+          { "$ref": "#/components/parameters/limit" },
           { "in": "query", "name": "q", "schema": { "type": "string" } },
           { "in": "query", "name": "category", "schema": { "type": "string" } },
-          { "in": "query", "name": "page", "schema": { "type": "integer" } }
+          { "in": "query", "name": "place", "schema": { "type": "string" } },
+          { "in": "query", "name": "feature", "schema": { "type": "string" } },
+          { "in": "query", "name": "lat", "schema": { "type": "number" } },
+          { "in": "query", "name": "lng", "schema": { "type": "number" } }
         ],
         "responses": { "200": { "description": "OK" } }
       }
@@ -54,6 +293,13 @@
       "get": {
         "tags": ["Cafes"],
         "summary": "Nearby cafes",
+        "parameters": [
+          { "in": "query", "name": "latitude", "required": true, "schema": { "type": "number" } },
+          { "in": "query", "name": "longitude", "required": true, "schema": { "type": "number" } },
+          { "in": "query", "name": "radius_km", "schema": { "type": "number" } },
+          { "$ref": "#/components/parameters/page" },
+          { "$ref": "#/components/parameters/limit" }
+        ],
         "responses": { "200": { "description": "OK" } }
       }
     },
@@ -62,7 +308,59 @@
         "tags": ["Cafes"],
         "summary": "Personalized recommendations",
         "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/page" },
+          { "$ref": "#/components/parameters/limit" },
+          { "in": "query", "name": "lat", "schema": { "type": "number" } },
+          { "in": "query", "name": "lng", "schema": { "type": "number" } }
+        ],
         "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/cafes/{id}": {
+      "get": {
+        "tags": ["Cafes"],
+        "summary": "Cafe detail",
+        "parameters": [
+          { "$ref": "#/components/parameters/id" },
+          { "in": "query", "name": "lat", "schema": { "type": "number" } },
+          { "in": "query", "name": "lng", "schema": { "type": "number" } }
+        ],
+        "responses": { "200": { "description": "OK" }, "404": { "description": "Not found" } }
+      }
+    },
+    "/cafes/{id}/reviews": {
+      "get": {
+        "tags": ["Reviews"],
+        "summary": "List cafe reviews (public)",
+        "parameters": [
+          { "$ref": "#/components/parameters/id" },
+          { "$ref": "#/components/parameters/page" },
+          { "$ref": "#/components/parameters/limit" }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      },
+      "post": {
+        "tags": ["Reviews"],
+        "summary": "Create review (verified visit required)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/id" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["rating", "body"],
+                "properties": {
+                  "rating": { "type": "integer", "minimum": 1, "maximum": 5 },
+                  "body": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Created" } }
       }
     },
     "/cafes/{id}/visits": {
@@ -70,20 +368,397 @@
         "tags": ["Visits"],
         "summary": "Record visit (server verifies location and awards XP)",
         "security": [{ "bearerAuth": [] }],
-        "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
-        ],
+        "parameters": [{ "$ref": "#/components/parameters/id" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["latitude", "longitude"],
+                "properties": {
+                  "latitude": { "type": "number" },
+                  "longitude": { "type": "number" },
+                  "accuracy": { "type": "number" },
+                  "media": {
+                    "type": "object",
+                    "properties": {
+                      "cloudinary_url": { "type": "string" },
+                      "public_id": { "type": "string" },
+                      "thumbnail_url": { "type": "string" },
+                      "media_type": { "type": "string", "enum": ["IMAGE", "VIDEO"] }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "201": { "description": "Verified" },
-          "200": { "description": "Rejected" }
+          "200": { "description": "Rejected" },
+          "409": { "description": "Duplicate visit" }
         }
+      }
+    },
+    "/reviews/{id}": {
+      "patch": {
+        "tags": ["Reviews"],
+        "summary": "Update own review",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/id" }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "rating": { "type": "integer", "minimum": 1, "maximum": 5 },
+                  "body": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Updated" } }
+      },
+      "delete": {
+        "tags": ["Reviews"],
+        "summary": "Soft-delete own review",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/id" }],
+        "responses": { "204": { "description": "No content" } }
+      }
+    },
+    "/cafe-suggestions": {
+      "post": {
+        "tags": ["Suggestions"],
+        "summary": "Suggest a cafe",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "address", "place"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "address": { "type": "string" },
+                  "place": { "type": "string" },
+                  "latitude": { "type": "number" },
+                  "longitude": { "type": "number" },
+                  "description": { "type": "string" },
+                  "image_url": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Created" } }
+      }
+    },
+    "/cafe-suggestions/my": {
+      "get": {
+        "tags": ["Suggestions"],
+        "summary": "My cafe suggestions",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/page" },
+          { "$ref": "#/components/parameters/limit" }
+        ],
+        "responses": { "200": { "description": "OK" } }
       }
     },
     "/leaderboard/weekly": {
       "get": {
         "tags": ["Leaderboard"],
         "summary": "Public weekly leaderboard",
+        "parameters": [
+          { "$ref": "#/components/parameters/page" },
+          { "$ref": "#/components/parameters/limit" }
+        ],
         "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/leaderboard/weekly/me": {
+      "get": {
+        "tags": ["Leaderboard"],
+        "summary": "My weekly rank",
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/admin/dashboard": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Admin metrics",
+        "security": [{ "adminAuth": [] }],
+        "responses": { "200": { "description": "OK" }, "403": { "description": "Not admin" } }
+      }
+    },
+    "/admin/users": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "List users",
+        "security": [{ "adminAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/page" },
+          { "$ref": "#/components/parameters/limit" }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/admin/visits": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "List visits",
+        "security": [{ "adminAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/page" },
+          { "$ref": "#/components/parameters/limit" }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/admin/categories": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "List categories",
+        "security": [{ "adminAuth": [] }],
+        "responses": { "200": { "description": "OK" } }
+      },
+      "post": {
+        "tags": ["Admin"],
+        "summary": "Create category",
+        "security": [{ "adminAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "slug"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "slug": { "type": "string" },
+                  "sort_order": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Created" } }
+      }
+    },
+    "/admin/categories/{id}": {
+      "patch": {
+        "tags": ["Admin"],
+        "summary": "Update category",
+        "security": [{ "adminAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/id" }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "slug": { "type": "string" },
+                  "sort_order": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Updated" } }
+      },
+      "delete": {
+        "tags": ["Admin"],
+        "summary": "Delete category",
+        "security": [{ "adminAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/id" }],
+        "responses": { "204": { "description": "No content" } }
+      }
+    },
+    "/admin/cafes": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "List cafes (includes inactive when queried)",
+        "security": [{ "adminAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/page" },
+          { "$ref": "#/components/parameters/limit" },
+          { "in": "query", "name": "include_deleted", "schema": { "type": "boolean" } }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      },
+      "post": {
+        "tags": ["Admin"],
+        "summary": "Create cafe",
+        "security": [{ "adminAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CafeWrite" }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Created" } }
+      }
+    },
+    "/admin/cafes/{id}": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Get cafe",
+        "security": [{ "adminAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/id" }],
+        "responses": { "200": { "description": "OK" } }
+      },
+      "patch": {
+        "tags": ["Admin"],
+        "summary": "Update cafe",
+        "security": [{ "adminAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/id" }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CafeWrite" }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Updated" } }
+      },
+      "delete": {
+        "tags": ["Admin"],
+        "summary": "Soft-delete cafe",
+        "security": [{ "adminAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/id" }],
+        "responses": { "204": { "description": "No content" } }
+      }
+    },
+    "/admin/cafes/{id}/restore": {
+      "patch": {
+        "tags": ["Admin"],
+        "summary": "Restore soft-deleted cafe",
+        "security": [{ "adminAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/id" }],
+        "responses": { "200": { "description": "Restored" } }
+      }
+    },
+    "/admin/cafes/{id}/media": {
+      "post": {
+        "tags": ["Admin"],
+        "summary": "Add cafe media (Cloudinary URL)",
+        "security": [{ "adminAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/id" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["media_type", "cloudinary_url", "public_id"],
+                "properties": {
+                  "media_type": { "type": "string", "enum": ["IMAGE", "VIDEO"] },
+                  "cloudinary_url": { "type": "string" },
+                  "public_id": { "type": "string" },
+                  "thumbnail_url": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Created" } }
+      }
+    },
+    "/admin/reviews": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "List reviews for moderation",
+        "security": [{ "adminAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/page" },
+          { "$ref": "#/components/parameters/limit" }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/admin/reviews/{id}": {
+      "delete": {
+        "tags": ["Admin"],
+        "summary": "Hide / moderate review",
+        "security": [{ "adminAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/id" }],
+        "responses": { "204": { "description": "No content" } }
+      }
+    },
+    "/admin/cafe-suggestions": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "List cafe suggestions",
+        "security": [{ "adminAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/page" },
+          { "$ref": "#/components/parameters/limit" },
+          { "in": "query", "name": "status", "schema": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED"] } }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/admin/cafe-suggestions/{id}": {
+      "patch": {
+        "tags": ["Admin"],
+        "summary": "Approve or reject suggestion (approve creates cafe + XP)",
+        "security": [{ "adminAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/id" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": { "type": "string", "enum": ["APPROVED", "REJECTED"] },
+                  "admin_note": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Updated" } }
+      }
+    },
+    "/admin/xp-rules": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "List XP rules",
+        "security": [{ "adminAuth": [] }],
+        "responses": { "200": { "description": "OK" } }
+      },
+      "patch": {
+        "tags": ["Admin"],
+        "summary": "Update XP rule amounts",
+        "security": [{ "adminAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["action", "xp"],
+                "properties": {
+                  "action": { "type": "string", "enum": ["NEW_CAFE_VISIT", "REVISIT", "CAFE_SUGGESTION"] },
+                  "xp": { "type": "integer", "minimum": 0 },
+                  "is_active": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Updated" } }
       }
     }
   },
@@ -92,7 +767,50 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "bearerFormat": "JWT"
+        "bearerFormat": "JWT",
+        "description": "User access token from /auth/login or /auth/register"
+      },
+      "adminAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Same JWT; user.role must be ADMIN"
+      }
+    },
+    "parameters": {
+      "id": {
+        "in": "path",
+        "name": "id",
+        "required": true,
+        "schema": { "type": "string" }
+      },
+      "page": {
+        "in": "query",
+        "name": "page",
+        "schema": { "type": "integer", "default": 1 }
+      },
+      "limit": {
+        "in": "query",
+        "name": "limit",
+        "schema": { "type": "integer", "default": 20, "maximum": 100 }
+      }
+    },
+    "schemas": {
+      "CafeWrite": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "latitude": { "type": "number" },
+          "longitude": { "type": "number" },
+          "address": { "type": "string" },
+          "place": { "type": "string" },
+          "price_range": { "type": "string", "enum": ["BUDGET", "MODERATE", "PREMIUM"] },
+          "features": { "type": "array", "items": { "type": "string" } },
+          "category_ids": { "type": "array", "items": { "type": "string", "format": "uuid" } },
+          "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE"] },
+          "is_active": { "type": "boolean" }
+        }
       }
     }
   }
