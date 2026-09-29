@@ -1,15 +1,12 @@
-import path from "node:path";
-import { existsSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import swaggerUi from "swagger-ui-express";
-import YAML from "yamljs";
 import { env } from "./config/env.js";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler.js";
 import { callableExport } from "./utils/callable-export.js";
+import { redocHtml, swaggerHtml } from "./docs-html.js";
+import openapi from "./openapi.json" with { type: "json" };
 import { authRouter } from "./modules/auth/auth.router.js";
 import { usersRouter } from "./modules/users/users.router.js";
 import { onboardingRouter } from "./modules/onboarding/onboarding.router.js";
@@ -17,9 +14,6 @@ import { cafesRouter, categoriesRouter, reviewsRouter } from "./modules/cafes/ca
 import { suggestionsRouter } from "./modules/suggestions/suggestions.router.js";
 import { leaderboardRouter } from "./modules/leaderboard/leaderboard.router.js";
 import { adminRouter } from "./modules/admin/admin.router.js";
-
-const dirname = path.dirname(fileURLToPath(import.meta.url));
-const openapiPath = path.join(dirname, "openapi.yaml");
 
 const helmetMiddleware = callableExport(helmet);
 const corsMiddleware = callableExport(cors);
@@ -37,7 +31,20 @@ export function createApp() {
   const config = env();
 
   app.set("trust proxy", 1);
-  app.use(helmetMiddleware());
+  app.use(
+    helmetMiddleware({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
+          styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
+          imgSrc: ["'self'", "data:", "https:"],
+          connectSrc: ["'self'"],
+          fontSrc: ["'self'", "https://cdn.jsdelivr.net", "data:"],
+        },
+      },
+    }),
+  );
   app.use(
     corsMiddleware({
       origin: config.CORS_ORIGIN.split(",").map((s) => s.trim()),
@@ -58,13 +65,15 @@ export function createApp() {
     res.status(200).json({ status: "ok" });
   });
 
-  if (existsSync(openapiPath)) {
-    const swaggerDocument = YAML.load(openapiPath);
-    app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-    app.get("/openapi.yaml", (_req, res) => {
-      res.sendFile(openapiPath);
-    });
-  }
+  app.get(["/docs", "/docs/"], (_req, res) => {
+    res.type("html").send(swaggerHtml(openapi));
+  });
+  app.get(["/redoc", "/redoc/"], (_req, res) => {
+    res.type("html").send(redocHtml(openapi));
+  });
+  app.get("/openapi.json", (_req, res) => {
+    res.json(openapi);
+  });
 
   const api = express.Router();
   api.use("/auth", authRouter);
