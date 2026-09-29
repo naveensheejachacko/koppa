@@ -21,6 +21,8 @@ Host `5432` is already another Postgres on this machine (`attendify` is `5433`, 
 - API: `http://localhost:3000/api/v1`
 - Health: `http://localhost:3000/health`
 - Swagger: `http://localhost:3000/docs`
+- ReDoc: `http://localhost:3000/redoc`
+- Admin panel contract: `docs/admin-panel.md`
 
 Guest browse needs no token. Register/login only for visit, review, suggest, profile, preferences, recommendations.
 
