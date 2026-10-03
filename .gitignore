@@ -7,4 +7,6 @@ coverage/
 .DS_Store
 prisma/dev.db
 prisma/dev.db-journal
-koppa-firebase-secret
+koppa-firebase-secret.json
+*firebase*secret*.json
+*-secret.json
