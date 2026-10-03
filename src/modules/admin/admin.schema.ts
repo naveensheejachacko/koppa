@@ -21,16 +21,19 @@ export const createCafeSchema = z.object({
   status: z.enum(["ACTIVE", "INACTIVE"]).optional(),
 });
 
-export const patchCafeSchema = createCafeSchema.partial().extend({
-  is_active: z.boolean().optional(),
-});
-
 export const cafeMediaSchema = z.object({
   media_type: z.enum(["IMAGE", "VIDEO"]),
   cloudinary_url: z.string().url(),
   public_id: z.string().min(1),
   thumbnail_url: z.string().url().optional(),
   is_default: z.boolean().optional(),
+});
+
+export const patchCafeSchema = createCafeSchema.partial().extend({
+  is_active: z.boolean().optional(),
+  add_media: z.array(cafeMediaSchema).optional(),
+  remove_media_ids: z.array(z.string().uuid()).optional(),
+  default_media_id: z.string().uuid().optional(),
 });
 
 export const patchCafeMediaSchema = z.object({

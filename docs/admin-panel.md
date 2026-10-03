@@ -201,6 +201,14 @@ Response `data` includes `id`, `categories[]`, `media[]`, snake_case fields. Sav
 
 `PATCH /api/v1/admin/cafes/:id` — same fields as create, all optional, plus `is_active` (boolean). Sending `category_ids` **replaces** all category links.
 
+Edit form also sends image changes on this same request:
+
+- `remove_media_ids`: ids of existing photos the admin removed with X
+- `add_media`: new Cloudinary images (same shape as `POST .../media`, including optional `is_default`)
+- `default_media_id`: existing photo that should be the cover
+
+Images not listed in `remove_media_ids` stay. If the cover is removed and no new default is sent, the oldest remaining image becomes the cover.
+
 ### Soft delete / restore
 
 `DELETE /api/v1/admin/cafes/:id` → `204` (sets `deletedAt`, `isActive=false`, `status=INACTIVE`). Cafe disappears from public list.

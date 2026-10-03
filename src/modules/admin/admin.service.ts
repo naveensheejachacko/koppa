@@ -1,5 +1,5 @@
 import { prisma } from "../../database/prisma.js";
-import { ConflictError, NotFoundError } from "../../utils/errors.js";
+import { ConflictError, NotFoundError, ValidationError } from "../../utils/errors.js";
 import { paginationMeta, skipTake } from "../../utils/pagination.js";
 import { Prisma } from "@prisma/client";
 import { CafeStatus, MediaType, PriceRange, XpAction } from "../../domain/enums.js";
@@ -96,6 +96,84 @@ export async function createCafe(input: {
   return serializeCafe(cafe);
 }
 
+type CafeMediaInput = {
+  media_type: MediaType;
+  cloudinary_url: string;
+  public_id: string;
+  thumbnail_url?: string;
+  is_default?: boolean;
+};
+
+async function syncCafeMedia(
+  tx: Prisma.TransactionClient,
+  cafeId: string,
+  uploadedById: string,
+  input: {
+    add_media?: CafeMediaInput[];
+    remove_media_ids?: string[];
+    default_media_id?: string;
+  },
+) {
+  const removeIds = [...new Set(input.remove_media_ids ?? [])];
+  if (input.default_media_id && removeIds.includes(input.default_media_id)) {
+    throw new ValidationError("default_media_id is also marked for removal");
+  }
+  if (removeIds.length > 0) {
+    const found = await tx.cafeMedia.findMany({
+      where: { cafeId, id: { in: removeIds } },
+      select: { id: true },
+    });
+    if (found.length !== removeIds.length) {
+      throw new NotFoundError("Media not found");
+    }
+    await tx.cafeMedia.deleteMany({ where: { cafeId, id: { in: removeIds } } });
+  }
+
+  const addedDefaults: string[] = [];
+  for (const item of input.add_media ?? []) {
+    const row = await tx.cafeMedia.create({
+      data: {
+        cafeId,
+        uploadedById,
+        mediaType: item.media_type,
+        cloudinaryUrl: item.cloudinary_url,
+        publicId: item.public_id,
+        thumbnailUrl: item.thumbnail_url,
+        isDefault: false,
+      },
+    });
+    if (item.is_default) {
+      addedDefaults.push(row.id);
+    }
+  }
+
+  const targetDefault = input.default_media_id ?? addedDefaults.at(-1);
+  if (targetDefault) {
+    const exists = await tx.cafeMedia.findFirst({ where: { id: targetDefault, cafeId } });
+    if (!exists) {
+      throw new NotFoundError("Media not found");
+    }
+    await tx.cafeMedia.updateMany({
+      where: { cafeId, isDefault: true },
+      data: { isDefault: false },
+    });
+    await tx.cafeMedia.update({ where: { id: targetDefault }, data: { isDefault: true } });
+    return;
+  }
+
+  const currentDefault = await tx.cafeMedia.findFirst({ where: { cafeId, isDefault: true } });
+  if (currentDefault) {
+    return;
+  }
+  const next = await tx.cafeMedia.findFirst({
+    where: { cafeId },
+    orderBy: { createdAt: "asc" },
+  });
+  if (next) {
+    await tx.cafeMedia.update({ where: { id: next.id }, data: { isDefault: true } });
+  }
+}
+
 export async function updateCafe(
   id: string,
   input: {
@@ -110,7 +188,11 @@ export async function updateCafe(
     category_ids?: string[];
     status?: CafeStatus;
     is_active?: boolean;
+    add_media?: CafeMediaInput[];
+    remove_media_ids?: string[];
+    default_media_id?: string;
   },
+  uploadedById: string,
 ) {
   const existing = await prisma.cafe.findUnique({ where: { id } });
   if (!existing || existing.deletedAt) {
@@ -122,6 +204,13 @@ export async function updateCafe(
       await tx.cafeCategory.createMany({
         data: input.category_ids.map((categoryId) => ({ cafeId: id, categoryId })),
       });
+    }
+    const touchesMedia =
+      input.add_media !== undefined ||
+      input.remove_media_ids !== undefined ||
+      input.default_media_id !== undefined;
+    if (touchesMedia) {
+      await syncCafeMedia(tx, id, uploadedById, input);
     }
     return tx.cafe.update({
       where: { id },

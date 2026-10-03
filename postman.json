@@ -716,7 +716,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"is_active\": true,\n  \"status\": \"ACTIVE\"\n}"
+              "raw": "{\n  \"is_active\": true,\n  \"status\": \"ACTIVE\",\n  \"remove_media_ids\": [\"{{mediaId}}\"],\n  \"add_media\": [\n    {\n      \"media_type\": \"IMAGE\",\n      \"cloudinary_url\": \"https://res.cloudinary.com/demo/image/upload/sample.jpg\",\n      \"public_id\": \"koppa/cafes/sample\",\n      \"is_default\": true\n    }\n  ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/admin/cafes/:id",

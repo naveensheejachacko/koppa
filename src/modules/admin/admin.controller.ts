@@ -46,7 +46,7 @@ export async function createCafe(req: Request, res: Response): Promise<void> {
 }
 
 export async function patchCafe(req: Request, res: Response): Promise<void> {
-  const data = await adminService.updateCafe(routeParam(req, "id"), req.body);
+  const data = await adminService.updateCafe(routeParam(req, "id"), req.body, req.user!.id);
   res.status(200).json({ message: "Cafe updated", data });
 }
 

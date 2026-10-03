@@ -879,7 +879,26 @@
           "features": { "type": "array", "items": { "type": "string" } },
           "category_ids": { "type": "array", "items": { "type": "string", "format": "uuid" } },
           "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE"] },
-          "is_active": { "type": "boolean" }
+          "is_active": { "type": "boolean" },
+          "add_media": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["media_type", "cloudinary_url", "public_id"],
+              "properties": {
+                "media_type": { "type": "string", "enum": ["IMAGE", "VIDEO"] },
+                "cloudinary_url": { "type": "string" },
+                "public_id": { "type": "string" },
+                "thumbnail_url": { "type": "string" },
+                "is_default": { "type": "boolean" }
+              }
+            }
+          },
+          "remove_media_ids": {
+            "type": "array",
+            "items": { "type": "string", "format": "uuid" }
+          },
+          "default_media_id": { "type": "string", "format": "uuid" }
         }
       }
     }
