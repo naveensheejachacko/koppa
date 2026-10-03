@@ -11,6 +11,11 @@ export async function login(req: Request, res: Response): Promise<void> {
   res.status(200).json({ data: result.user, tokens: result.tokens });
 }
 
+export async function google(req: Request, res: Response): Promise<void> {
+  const result = await authService.googleSignIn(req.body.id_token);
+  res.status(200).json({ data: result.user, tokens: result.tokens });
+}
+
 export async function refresh(req: Request, res: Response): Promise<void> {
   const tokens = await authService.refreshSession(req.body.refresh_token);
   res.status(200).json({ tokens });

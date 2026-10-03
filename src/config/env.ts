@@ -18,6 +18,7 @@ const envSchema = z.object({
   ADMIN_BOOTSTRAP_EMAIL: z.string().email().optional(),
   ADMIN_BOOTSTRAP_PASSWORD: z.string().min(8).optional(),
   ADMIN_BOOTSTRAP_USERNAME: z.string().min(3).optional(),
+  GOOGLE_CLIENT_ID: z.string().optional().default(""),
 });
 
 export type Env = z.infer<typeof envSchema>;

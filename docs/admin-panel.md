@@ -100,7 +100,7 @@ Suggested UI order for first integration:
 | Categories | `GET/POST /admin/categories`, `PATCH/DELETE /admin/categories/:id` |
 | Cafes list | `GET /admin/cafes?page=&limit=&include_deleted=` |
 | Cafe create/edit | `POST /admin/cafes`, `GET/PATCH /admin/cafes/:id` |
-| Cafe media | `POST /admin/cafes/:id/media` |
+| Cafe media | `POST /admin/cafes/:id/media`, `PATCH /admin/cafes/:id/media/:mediaId`, `DELETE /admin/cafes/:id/media/:mediaId` |
 | Soft delete / restore | `DELETE /admin/cafes/:id`, `PATCH /admin/cafes/:id/restore` |
 | Suggestions inbox | `GET /admin/cafe-suggestions?status=PENDING` |
 | Approve / reject | `PATCH /admin/cafe-suggestions/:id` |
@@ -209,7 +209,7 @@ Response `data` includes `id`, `categories[]`, `media[]`, snake_case fields. Sav
 
 ### Media
 
-Upload files to **Cloudinary** in the browser. Then:
+Upload files to **Cloudinary** in the browser. Then persist the URL:
 
 `POST /api/v1/admin/cafes/:id/media`
 
@@ -218,11 +218,22 @@ Upload files to **Cloudinary** in the browser. Then:
   "media_type": "IMAGE",
   "cloudinary_url": "https://res.cloudinary.com/.../image.jpg",
   "public_id": "koppa/cafes/abc",
-  "thumbnail_url": "https://res.cloudinary.com/.../thumb.jpg"
+  "thumbnail_url": "https://res.cloudinary.com/.../thumb.jpg",
+  "is_default": true
 }
 ```
 
 `media_type`: `IMAGE` | `VIDEO`  
+`is_default` optional. The first image on a cafe is always default. Sending `is_default: true` on a later upload makes it the cover and unsets the previous default. Cafe payloads include `media[].is_default`; default items are listed first.
+
+**Set cover on an existing image** `PATCH /api/v1/admin/cafes/:id/media/:mediaId`
+
+```json
+{ "is_default": true }
+```
+
+**Delete** `DELETE /api/v1/admin/cafes/:id/media/:mediaId` → `204`. If the deleted row was default, the oldest remaining image becomes default. This only removes the DB row (Cloudinary cleanup is the client’s choice).
+
 API does not accept raw binaries.
 
 ---

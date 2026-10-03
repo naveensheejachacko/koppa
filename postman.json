@@ -733,13 +733,48 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"media_type\": \"IMAGE\",\n  \"cloudinary_url\": \"https://res.cloudinary.com/demo/image/upload/sample.jpg\",\n  \"public_id\": \"koppa/cafes/sample\"\n}"
+              "raw": "{\n  \"media_type\": \"IMAGE\",\n  \"cloudinary_url\": \"https://res.cloudinary.com/demo/image/upload/sample.jpg\",\n  \"public_id\": \"koppa/cafes/sample\",\n  \"is_default\": true\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/admin/cafes/:id/media",
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "admin", "cafes", ":id", "media"],
               "variable": [{ "key": "id", "value": "{{cafeId}}" }]
+            }
+          }
+        },
+        {
+          "name": "Set default cafe media",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_default\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/cafes/:id/media/:mediaId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "cafes", ":id", "media", ":mediaId"],
+              "variable": [
+                { "key": "id", "value": "{{cafeId}}" },
+                { "key": "mediaId", "value": "{{mediaId}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete cafe media",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/cafes/:id/media/:mediaId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "cafes", ":id", "media", ":mediaId"],
+              "variable": [
+                { "key": "id", "value": "{{cafeId}}" },
+                { "key": "mediaId", "value": "{{mediaId}}" }
+              ]
             }
           }
         },

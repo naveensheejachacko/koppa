@@ -5,10 +5,33 @@ import { NotFoundError, ValidationError } from "../../utils/errors.js";
 import { paginationMeta, skipTake } from "../../utils/pagination.js";
 import { haversineKm, isValidCoordinate } from "../../utils/geo.js";
 
+const cafeMediaOrderBy = [
+  { isDefault: "desc" as const },
+  { createdAt: "asc" as const },
+];
+
 const publicCafeInclude = {
   categories: { include: { category: true } },
-  media: { orderBy: { createdAt: "asc" as const } },
+  media: { orderBy: cafeMediaOrderBy },
 } satisfies Prisma.CafeInclude;
+
+export function serializeCafeMedia(m: {
+  id: string;
+  mediaType: string;
+  cloudinaryUrl: string;
+  publicId: string;
+  thumbnailUrl: string | null;
+  isDefault: boolean;
+}) {
+  return {
+    id: m.id,
+    media_type: m.mediaType,
+    cloudinary_url: m.cloudinaryUrl,
+    public_id: m.publicId,
+    thumbnail_url: m.thumbnailUrl,
+    is_default: m.isDefault,
+  };
+}
 
 function publicWhere(): Prisma.CafeWhereInput {
   return { deletedAt: null, isActive: true, status: CafeStatus.ACTIVE };
@@ -36,13 +59,7 @@ export function serializeCafe(
       slug: cc.category.slug,
       name: cc.category.name,
     })),
-    media: cafe.media.map((m) => ({
-      id: m.id,
-      media_type: m.mediaType,
-      cloudinary_url: m.cloudinaryUrl,
-      public_id: m.publicId,
-      thumbnail_url: m.thumbnailUrl,
-    })),
+    media: cafe.media.map(serializeCafeMedia),
     created_at: cafe.createdAt,
     ...extra,
   };

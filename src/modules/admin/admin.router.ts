@@ -7,6 +7,7 @@ import {
   cafeMediaSchema,
   categoryBodySchema,
   createCafeSchema,
+  patchCafeMediaSchema,
   patchCafeSchema,
   patchCategorySchema,
   suggestionReviewSchema,
@@ -35,6 +36,12 @@ adminRouter.patch("/cafes/:id", validate(patchCafeSchema), asyncHandler(controll
 adminRouter.delete("/cafes/:id", asyncHandler(controller.deleteCafe));
 adminRouter.patch("/cafes/:id/restore", asyncHandler(controller.restoreCafe));
 adminRouter.post("/cafes/:id/media", validate(cafeMediaSchema), asyncHandler(controller.addMedia));
+adminRouter.patch(
+  "/cafes/:id/media/:mediaId",
+  validate(patchCafeMediaSchema),
+  asyncHandler(controller.patchMedia),
+);
+adminRouter.delete("/cafes/:id/media/:mediaId", asyncHandler(controller.deleteMedia));
 
 adminRouter.get("/reviews", asyncHandler(controller.listReviews));
 adminRouter.delete("/reviews/:id", asyncHandler(controller.hideReview));

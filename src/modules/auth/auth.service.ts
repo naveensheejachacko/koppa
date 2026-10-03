@@ -1,10 +1,11 @@
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { OAuth2Client } from "google-auth-library";
 import { Role } from "../../domain/enums.js";
 import { env } from "../../config/env.js";
 import { prisma } from "../../database/prisma.js";
-import { ConflictError, UnauthorizedError, ValidationError } from "../../utils/errors.js";
+import { AppError, ConflictError, UnauthorizedError, ValidationError } from "../../utils/errors.js";
 
 const SALT_ROUNDS = 12;
 
@@ -78,7 +79,7 @@ export async function loginUser(input: {
 }): Promise<{ user: PublicUser; tokens: AuthTokens }> {
   const email = input.email.toLowerCase().trim();
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) {
+  if (!user || !user.passwordHash) {
     throw new UnauthorizedError("Invalid credentials");
   }
   const ok = await bcrypt.compare(input.password, user.passwordHash);
@@ -87,6 +88,87 @@ export async function loginUser(input: {
   }
   const tokens = await issueTokens(user.id, user.role);
   return { user: toPublicUser(user), tokens };
+}
+
+export async function googleSignIn(idToken: string): Promise<{ user: PublicUser; tokens: AuthTokens }> {
+  const clientId = env().GOOGLE_CLIENT_ID;
+  if (!clientId) {
+    throw new AppError(503, "Google sign-in is not configured");
+  }
+
+  const google = new OAuth2Client(clientId);
+  let payload: { sub?: string; email?: string; email_verified?: boolean | string; name?: string; picture?: string };
+  try {
+    const ticket = await google.verifyIdToken({ idToken, audience: clientId });
+    payload = ticket.getPayload() ?? {};
+  } catch {
+    throw new UnauthorizedError("Invalid Google token");
+  }
+
+  const googleId = payload.sub;
+  const email = payload.email?.toLowerCase().trim();
+  const emailVerified = payload.email_verified === true || payload.email_verified === "true";
+  if (!googleId || !email || !emailVerified) {
+    throw new UnauthorizedError("Google account email is missing or unverified");
+  }
+
+  const existingByGoogle = await prisma.user.findUnique({ where: { googleId } });
+  if (existingByGoogle) {
+    if (!existingByGoogle.profileImageUrl && payload.picture) {
+      const updated = await prisma.user.update({
+        where: { id: existingByGoogle.id },
+        data: { profileImageUrl: payload.picture },
+      });
+      const tokens = await issueTokens(updated.id, updated.role);
+      return { user: toPublicUser(updated), tokens };
+    }
+    const tokens = await issueTokens(existingByGoogle.id, existingByGoogle.role);
+    return { user: toPublicUser(existingByGoogle), tokens };
+  }
+
+  const existingByEmail = await prisma.user.findUnique({ where: { email } });
+  if (existingByEmail) {
+    const linked = await prisma.user.update({
+      where: { id: existingByEmail.id },
+      data: {
+        googleId,
+        profileImageUrl: existingByEmail.profileImageUrl ?? payload.picture ?? null,
+      },
+    });
+    const tokens = await issueTokens(linked.id, linked.role);
+    return { user: toPublicUser(linked), tokens };
+  }
+
+  const user = await prisma.user.create({
+    data: {
+      email,
+      googleId,
+      name: (payload.name ?? email.split("@")[0] ?? "Koppa user").slice(0, 80),
+      username: await uniqueUsernameFromEmail(email),
+      profileImageUrl: payload.picture ?? null,
+    },
+  });
+  const tokens = await issueTokens(user.id, user.role);
+  return { user: toPublicUser(user), tokens };
+}
+
+async function uniqueUsernameFromEmail(email: string): Promise<string> {
+  const base = email
+    .split("@")[0]
+    ?.toLowerCase()
+    .replace(/[^a-z0-9_]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "")
+    .slice(0, 20);
+  const seed = base && base.length >= 3 ? base : `user${crypto.randomBytes(3).toString("hex")}`;
+  for (let i = 0; i < 8; i += 1) {
+    const candidate = i === 0 ? seed : `${seed.slice(0, 20)}_${crypto.randomBytes(2).toString("hex")}`;
+    const taken = await prisma.user.findUnique({ where: { username: candidate } });
+    if (!taken) {
+      return candidate.slice(0, 30);
+    }
+  }
+  return `user_${crypto.randomBytes(8).toString("hex")}`.slice(0, 30);
 }
 
 export async function refreshSession(refreshToken: string): Promise<AuthTokens> {

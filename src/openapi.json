@@ -66,6 +66,29 @@
         "responses": { "200": { "description": "OK" }, "401": { "description": "Invalid credentials" } }
       }
     },
+    "/auth/google": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Google sign-in (ID token)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["id_token"],
+                "properties": { "id_token": { "type": "string" } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Same token shape as login" },
+          "401": { "description": "Invalid Google token" },
+          "503": { "description": "GOOGLE_CLIENT_ID not set" }
+        }
+      }
+    },
     "/auth/refresh": {
       "post": {
         "tags": ["Auth"],
@@ -664,13 +687,60 @@
                   "media_type": { "type": "string", "enum": ["IMAGE", "VIDEO"] },
                   "cloudinary_url": { "type": "string" },
                   "public_id": { "type": "string" },
-                  "thumbnail_url": { "type": "string" }
+                  "thumbnail_url": { "type": "string" },
+                  "is_default": { "type": "boolean" }
                 }
               }
             }
           }
         },
         "responses": { "201": { "description": "Created" } }
+      }
+    },
+    "/admin/cafes/{id}/media/{mediaId}": {
+      "patch": {
+        "tags": ["Admin"],
+        "summary": "Set cafe media as default cover",
+        "security": [{ "adminAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/id" },
+          {
+            "name": "mediaId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["is_default"],
+                "properties": {
+                  "is_default": { "type": "boolean", "enum": [true] }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Updated" } }
+      },
+      "delete": {
+        "tags": ["Admin"],
+        "summary": "Delete cafe media",
+        "security": [{ "adminAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/id" },
+          {
+            "name": "mediaId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": { "204": { "description": "No content" } }
       }
     },
     "/admin/reviews": {

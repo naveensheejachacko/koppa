@@ -65,6 +65,19 @@ export async function addMedia(req: Request, res: Response): Promise<void> {
   res.status(201).json({ data });
 }
 
+export async function patchMedia(req: Request, res: Response): Promise<void> {
+  const data = await adminService.setCafeMediaDefault(
+    routeParam(req, "id"),
+    routeParam(req, "mediaId"),
+  );
+  res.status(200).json({ message: "Default media updated", data });
+}
+
+export async function deleteMedia(req: Request, res: Response): Promise<void> {
+  await adminService.deleteCafeMedia(routeParam(req, "id"), routeParam(req, "mediaId"));
+  res.status(204).send();
+}
+
 export async function listReviews(req: Request, res: Response): Promise<void> {
   const { page, limit } = paginationQuerySchema.parse(req.query);
   const result = await reviewsService.adminListReviews(page, limit);

@@ -32,7 +32,9 @@ Never send `verified`, `xp`, `distance`, or `rank` from the client. Backend comp
 
 Upload from the web app (or signed upload later). Persist `cloudinary_url` + `public_id` on:
 
-- `POST /api/v1/admin/cafes/:id/media`
+- `POST /api/v1/admin/cafes/:id/media` (`is_default` optional)
+- `PATCH /api/v1/admin/cafes/:id/media/:mediaId` (`{ "is_default": true }`)
+- `DELETE /api/v1/admin/cafes/:id/media/:mediaId`
 - `POST /api/v1/cafes/:id/visits` (`media` object)
 
 ## Tests

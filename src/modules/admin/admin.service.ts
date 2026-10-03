@@ -3,12 +3,12 @@ import { ConflictError, NotFoundError } from "../../utils/errors.js";
 import { paginationMeta, skipTake } from "../../utils/pagination.js";
 import { Prisma } from "@prisma/client";
 import { CafeStatus, MediaType, PriceRange, XpAction } from "../../domain/enums.js";
-import { serializeCafe } from "../cafes/cafes.service.js";
+import { serializeCafe, serializeCafeMedia } from "../cafes/cafes.service.js";
 import { listXpRules, updateXpRule } from "../xp/xp.service.js";
 
 const cafeInclude = {
   categories: { include: { category: true } },
-  media: { orderBy: { createdAt: "asc" as const } },
+  media: { orderBy: [{ isDefault: "desc" as const }, { createdAt: "asc" as const }] },
 };
 
 export async function listCategories() {
@@ -178,21 +178,83 @@ export async function addCafeMedia(
     cloudinary_url: string;
     public_id: string;
     thumbnail_url?: string;
+    is_default?: boolean;
   },
 ) {
   const cafe = await prisma.cafe.findUnique({ where: { id: cafeId } });
   if (!cafe || cafe.deletedAt) {
     throw new NotFoundError("Cafe not found");
   }
-  return prisma.cafeMedia.create({
-    data: {
-      cafeId,
-      uploadedById,
-      mediaType: input.media_type,
-      cloudinaryUrl: input.cloudinary_url,
-      publicId: input.public_id,
-      thumbnailUrl: input.thumbnail_url,
-    },
+  const media = await prisma.$transaction(async (tx) => {
+    const existingCount = await tx.cafeMedia.count({ where: { cafeId } });
+    const isDefault = input.is_default === true || existingCount === 0;
+    if (isDefault) {
+      await tx.cafeMedia.updateMany({
+        where: { cafeId, isDefault: true },
+        data: { isDefault: false },
+      });
+    }
+    return tx.cafeMedia.create({
+      data: {
+        cafeId,
+        uploadedById,
+        mediaType: input.media_type,
+        cloudinaryUrl: input.cloudinary_url,
+        publicId: input.public_id,
+        thumbnailUrl: input.thumbnail_url,
+        isDefault,
+      },
+    });
+  });
+  return serializeCafeMedia(media);
+}
+
+export async function setCafeMediaDefault(cafeId: string, mediaId: string) {
+  const cafe = await prisma.cafe.findUnique({ where: { id: cafeId } });
+  if (!cafe || cafe.deletedAt) {
+    throw new NotFoundError("Cafe not found");
+  }
+  const media = await prisma.cafeMedia.findFirst({ where: { id: mediaId, cafeId } });
+  if (!media) {
+    throw new NotFoundError("Media not found");
+  }
+  const updated = await prisma.$transaction(async (tx) => {
+    await tx.cafeMedia.updateMany({
+      where: { cafeId, isDefault: true, NOT: { id: mediaId } },
+      data: { isDefault: false },
+    });
+    return tx.cafeMedia.update({
+      where: { id: mediaId },
+      data: { isDefault: true },
+    });
+  });
+  return serializeCafeMedia(updated);
+}
+
+export async function deleteCafeMedia(cafeId: string, mediaId: string): Promise<void> {
+  const cafe = await prisma.cafe.findUnique({ where: { id: cafeId } });
+  if (!cafe || cafe.deletedAt) {
+    throw new NotFoundError("Cafe not found");
+  }
+  const media = await prisma.cafeMedia.findFirst({ where: { id: mediaId, cafeId } });
+  if (!media) {
+    throw new NotFoundError("Media not found");
+  }
+  await prisma.$transaction(async (tx) => {
+    await tx.cafeMedia.delete({ where: { id: mediaId } });
+    if (!media.isDefault) {
+      return;
+    }
+    const next = await tx.cafeMedia.findFirst({
+      where: { cafeId },
+      orderBy: { createdAt: "asc" },
+    });
+    if (next) {
+      await tx.cafeMedia.update({
+        where: { id: next.id },
+        data: { isDefault: true },
+      });
+    }
   });
 }
 

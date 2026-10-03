@@ -30,6 +30,11 @@ export const cafeMediaSchema = z.object({
   cloudinary_url: z.string().url(),
   public_id: z.string().min(1),
   thumbnail_url: z.string().url().optional(),
+  is_default: z.boolean().optional(),
+});
+
+export const patchCafeMediaSchema = z.object({
+  is_default: z.literal(true),
 });
 
 export const suggestionReviewSchema = z.object({
